@@ -1,0 +1,9 @@
+[spaces]
+type = s3
+provider = DigitalOcean
+env_auth = true
+endpoint = nyc3.digitaloceanspaces.com
+acl = private
+env_auth = false
+access_key_id = YOUR_ACCESS_KEY
+secret_access_key = YOUR_SECRET_KEY

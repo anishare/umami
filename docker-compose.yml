@@ -3,12 +3,12 @@ services:
   umami:
     image: ghcr.io/umami-software/umami:latest
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       DATABASE_URL: postgresql://umami:umami@db:5432/umami
-      APP_SECRET: replace-me-with-a-random-string
-      # Required for two-factor authentication, generate with: openssl rand -hex 32
-      TWO_FACTOR_ENCRYPTION_KEY: replace-me-with-a-64-character-hex-string
+      APP_SECRET: ${APP_SECRET}
+      TWO_FACTOR_ENCRYPTION_KEY: ${TWO_FACTOR_ENCRYPTION_KEY}
+      DISABLE_TELEMETRY: ${DISABLE_TELEMETRY}
     depends_on:
       db:
         condition: service_healthy
@@ -33,5 +33,43 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  db-backup:
+    # Tag must track the db service's major version: pg_dump refuses to dump a
+    # server newer than itself.
+    image: prodrigestivill/postgres-backup-local:15
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: umami
+      # 23:00 daily (go-cron, seconds first), an hour before the sync cron, so
+      # the nightly dump is complete and closed before it is uploaded.
+      SCHEDULE: '0 0 23 * * *'
+      BACKUP_KEEP_DAYS: 7
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 6
+    volumes:
+      # Bind mount, not a named volume, so the host can sync these off-droplet.
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+  caddy:
+    image: caddy:latest
+    environment:
+      CADDY_EMAIL: ${CADDY_EMAIL}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./caddy/production/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: always
+    depends_on:
+      - umami
 volumes:
   umami-db-data:
+  caddy_data:
+  caddy_config:

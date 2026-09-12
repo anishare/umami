@@ -49,6 +49,13 @@ yarn-error.log*
 # local env files
 .env
 .env.*
-*.env.*
+*.env*
+rclone.conf
 
 *.dev.yml
+
+# Local database dumps written by the db-backup service.
+backups/
+
+# Template carries no secrets and is exempt from the *.env.* rule above.
+!ops/rclone.env.example

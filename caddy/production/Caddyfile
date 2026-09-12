@@ -1,0 +1,9 @@
+{
+	email {$CADDY_EMAIL}
+}
+
+analytics.anishare.co {
+	reverse_proxy umami:3000 {
+		header_up X-Real-IP {remote_host}
+	}
+}
